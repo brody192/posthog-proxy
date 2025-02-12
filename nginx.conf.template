@@ -6,6 +6,14 @@ http {
     sendfile on;
     client_max_body_size 10M;
     
+    # Define upstream with PostHog's official IPv4 addresses
+    upstream posthog_backend {
+        server 44.205.89.55:443;
+        server 44.208.188.173:443 backup;
+        server 52.4.194.122:443 backup;
+        keepalive 32;  # Keep connections alive
+    }
+    
     map $http_origin $cors_origin {
         default "";
         "https://railway-develop.com" $http_origin;
@@ -47,7 +55,7 @@ http {
             proxy_set_header      Host                          app.posthog.com;
             proxy_redirect        off;
             proxy_ssl_server_name on;
-            proxy_pass            https://app.posthog.com;
+            proxy_pass            https://posthog_backend;
             
             proxy_http_version    1.1;
             proxy_buffering       off;
