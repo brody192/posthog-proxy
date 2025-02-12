@@ -6,9 +6,9 @@ http {
     sendfile on;
     client_max_body_size 10M;
     
-    # Define upstream with explicit IPv4 address for PostHog
-    upstream posthog_backend {
-        server 104.18.40.50:443;  # PostHog's IPv4 address
+    map $http_origin $cors_origin {
+        default "";
+        "https://railway-develop.com" $http_origin;
     }
 
     server {
@@ -22,15 +22,20 @@ http {
             # Remove any existing CORS headers from the upstream
             proxy_hide_header 'Access-Control-Allow-Origin';
             
-            # Add single CORS header
-            add_header 'Access-Control-Allow-Origin' 'https://railway-develop.com' always;
-            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
-            add_header 'Access-Control-Allow-Headers' '*' always;
-            add_header 'Access-Control-Max-Age' 86400 always;
+            # Use variable for CORS origin
+            add_header 'Access-Control-Allow-Origin' $cors_origin always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE' always;
+            add_header 'Access-Control-Allow-Headers' 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization' always;
             add_header 'Access-Control-Allow-Credentials' 'true' always;
-
-            # Handle preflight requests
+            add_header 'Access-Control-Max-Age' 86400 always;
+            
+            # Preflight OPTIONS handling
             if ($request_method = 'OPTIONS') {
+                add_header 'Access-Control-Allow-Origin' $cors_origin always;
+                add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE' always;
+                add_header 'Access-Control-Allow-Headers' 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization' always;
+                add_header 'Access-Control-Allow-Credentials' 'true' always;
+                add_header 'Access-Control-Max-Age' 86400 always;
                 return 204;
             }
 
@@ -42,7 +47,7 @@ http {
             proxy_set_header      Host                          app.posthog.com;
             proxy_redirect        off;
             proxy_ssl_server_name on;
-            proxy_pass            https://posthog_backend;
+            proxy_pass            https://app.posthog.com;
             
             proxy_http_version    1.1;
             proxy_buffering       off;
