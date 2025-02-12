@@ -4,7 +4,6 @@ events { worker_connections 1024; }
 
 http {
     sendfile on;
-    # Add client body size limit - adjust the size as needed
     client_max_body_size 10M;
 
     server {
@@ -15,26 +14,21 @@ http {
         listen ${PORT};
 
         location / {
-            # Existing CORS headers
-            add_header 'Access-Control-Allow-Origin' 'https://railway-develop.com';
-            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
-            add_header 'Access-Control-Allow-Headers' '*';
-            add_header 'Access-Control-Max-Age' 86400;
+            # Remove any existing CORS headers from the upstream
+            proxy_hide_header 'Access-Control-Allow-Origin';
+            
+            # Add single CORS header
+            add_header 'Access-Control-Allow-Origin' 'https://railway-develop.com' always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+            add_header 'Access-Control-Allow-Headers' '*' always;
+            add_header 'Access-Control-Max-Age' 86400 always;
 
             # Handle preflight requests
             if ($request_method = 'OPTIONS') {
-                add_header 'Access-Control-Allow-Origin' 'https://railway-develop.com';
-                add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
-                add_header 'Access-Control-Allow-Headers' '*';
-                add_header 'Access-Control-Max-Age' 86400;
-                add_header 'Content-Type' 'text/plain charset=UTF-8';
-                add_header 'Content-Length' 0;
                 return 204;
             }
 
-            # Add client body size limit at location level (optional, can use http level only)
             client_max_body_size 10M;
-
             proxy_set_header      X-Real-IP                     $remote_addr;
             proxy_set_header      X-Forwarded-For               $proxy_add_x_forwarded_for;
             proxy_set_header      X-Forwarded-Host              $server_name;
