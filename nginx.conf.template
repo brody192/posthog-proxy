@@ -5,51 +5,26 @@ events { worker_connections 1024; }
 http {
     sendfile on;
     client_max_body_size 10M;
-    
-    # Define upstream with PostHog's official IPv4 addresses
-    upstream posthog_backend {
-        server 44.205.89.55:443;
-        server 44.208.188.173:443 backup;
-        server 52.4.194.122:443 backup;
-        keepalive 32;
-    }
-    
-    map $http_origin $cors_origin {
-        default "";
-        "https://railway-develop.com" $http_origin;
-    }
 
     server {
-        keepalive_timeout 300;  # Increased from 70
-        keepalive_requests 1000;
-        
-        server_name ${SERVER_NAME};
-        listen ${PORT};
+        keepalive_timeout   70;
 
-        # Add this section for better timeout handling
-        proxy_connect_timeout 300;
-        proxy_send_timeout 300;
-        proxy_read_timeout 300;
-        send_timeout 300;
+        server_name ${SERVER_NAME};
+
+        listen ${PORT};
 
         location / {
             # Remove any existing CORS headers from the upstream
             proxy_hide_header 'Access-Control-Allow-Origin';
             
-            # Use variable for CORS origin
-            add_header 'Access-Control-Allow-Origin' $cors_origin always;
-            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE' always;
-            add_header 'Access-Control-Allow-Headers' '*' always;  # Changed to allow all headers
-            add_header 'Access-Control-Allow-Credentials' 'true' always;
+            # Add single CORS header
+            add_header 'Access-Control-Allow-Origin' 'https://railway-develop.com' always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+            add_header 'Access-Control-Allow-Headers' '*' always;
             add_header 'Access-Control-Max-Age' 86400 always;
-            
-            # Preflight OPTIONS handling
+
+            # Handle preflight requests
             if ($request_method = 'OPTIONS') {
-                add_header 'Access-Control-Allow-Origin' $cors_origin always;
-                add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE' always;
-                add_header 'Access-Control-Allow-Headers' '*' always;
-                add_header 'Access-Control-Allow-Credentials' 'true' always;
-                add_header 'Access-Control-Max-Age' 86400 always;
                 return 204;
             }
 
@@ -59,17 +34,9 @@ http {
             proxy_set_header      X-Forwarded-Host              $server_name;
             proxy_set_header      X-Forwarded-Proto             $scheme;
             proxy_set_header      Host                          app.posthog.com;
-            proxy_set_header      Connection                    "keep-alive";
             proxy_redirect        off;
             proxy_ssl_server_name on;
-            proxy_pass            https://posthog_backend;
-            
-            proxy_http_version    1.1;
-            proxy_buffering       off;
-            proxy_request_buffering off;  # Added to prevent request buffering
-            proxy_read_timeout    300;
-            proxy_connect_timeout 300;
-            proxy_send_timeout    300;
+            proxy_pass            https://app.posthog.com;
         }
     }
 }
