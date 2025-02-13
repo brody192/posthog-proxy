@@ -5,6 +5,13 @@ events { worker_connections 1024; }
 http {
     sendfile on;
     client_max_body_size 10M;
+    
+    # Map to handle multiple origins
+    map $http_origin $cors_origin {
+        default "";
+        "https://railway-develop.com" $http_origin;
+        "https://railway.com" $http_origin;
+    }
 
     server {
         keepalive_timeout   70;
@@ -17,14 +24,20 @@ http {
             # Remove any existing CORS headers from the upstream
             proxy_hide_header 'Access-Control-Allow-Origin';
             
-            # Add single CORS header
-            add_header 'Access-Control-Allow-Origin' 'https://railway-develop.com' always;
+            # Use variable for CORS origin
+            add_header 'Access-Control-Allow-Origin' $cors_origin always;
             add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
             add_header 'Access-Control-Allow-Headers' '*' always;
             add_header 'Access-Control-Max-Age' 86400 always;
+            add_header 'Access-Control-Allow-Credentials' 'true' always;
 
             # Handle preflight requests
             if ($request_method = 'OPTIONS') {
+                add_header 'Access-Control-Allow-Origin' $cors_origin always;
+                add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+                add_header 'Access-Control-Allow-Headers' '*' always;
+                add_header 'Access-Control-Max-Age' 86400 always;
+                add_header 'Access-Control-Allow-Credentials' 'true' always;
                 return 204;
             }
 
