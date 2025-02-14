@@ -11,6 +11,7 @@ http {
         default "";
         "https://railway-develop.com" $http_origin;
         "https://railway.com" $http_origin;
+        "https://lantern.railway.com" $http_origin;  # Explicitly allow lantern subdomain
         "~^https://[^/]+\.railway\.com$" $http_origin;  # Allow all railway.com subdomains
     }
 
@@ -21,6 +22,9 @@ http {
 
         listen ${PORT};
 
+        # Add debug logging for CORS headers
+        add_header 'X-Debug-CORS-Origin' $cors_origin always;
+
         # Global CORS settings for all locations
         add_header 'Access-Control-Allow-Origin' $cors_origin always;
         add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
@@ -30,6 +34,16 @@ http {
 
         # Handle all paths including /array/
         location / {
+            # Add debug logging
+            add_header 'X-Debug-Original-Origin' $http_origin always;
+            
+            # Ensure CORS headers are added before proxy_pass
+            add_header 'Access-Control-Allow-Origin' $cors_origin always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+            add_header 'Access-Control-Allow-Headers' '*' always;
+            add_header 'Access-Control-Max-Age' 86400 always;
+            add_header 'Access-Control-Allow-Credentials' 'true' always;
+
             # Remove any existing CORS headers from the upstream
             proxy_hide_header 'Access-Control-Allow-Origin';
             
