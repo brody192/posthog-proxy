@@ -11,8 +11,6 @@ http {
     # ipv6=off ensures we only use IPv4 for upstream connections because Railway doesn't support outbound IPv6
     resolver 8.8.8.8 8.8.4.4 valid=1s ipv6=off;
     
-    set $upstream_url https://app.posthog.com;
-    
     # Map to handle multiple origins
     map $http_origin $cors_origin {
         default "";
@@ -26,6 +24,9 @@ http {
         keepalive_timeout   70;
         server_name ${SERVER_NAME};
         listen ${PORT};
+        
+        # Variable for upstream URL to enable dynamic DNS resolution
+        set $upstream_url https://app.posthog.com;
 
         # Global CORS settings for all locations
         add_header 'Access-Control-Allow-Origin' $cors_origin always;
