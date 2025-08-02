@@ -4,7 +4,7 @@ events { worker_connections 1024; }
 
 http {
     sendfile on;
-    client_max_body_size 10M;
+    client_max_body_size 20M;
     
     # DNS resolver with 1 second TTL for semi-dynamic DNS resolution.
     # 1s is the shortest time you can set for a TTL, because 0s is equivalent to unset.
